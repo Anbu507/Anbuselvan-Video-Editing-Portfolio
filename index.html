@@ -20,6 +20,8 @@
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes floatY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
   body {
     margin: 0;
     background: var(--bg);
@@ -65,7 +67,7 @@
   }
   .brand .dot { color: var(--accent); }
   .nav-links { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
-  .nav-links a { color: var(--text); font-size: 14px; font-weight: 500; }
+  .nav-links a { color: var(--text); font-size: 14px; font-weight: 500; transition: color 0.25s ease; }
   .nav-links a:hover { color: var(--accent); }
   .nav-links a.ext { color: var(--muted); font-size: 13px; }
 
@@ -94,16 +96,23 @@
     display: inline-block; padding: 13px 26px; border-radius: 4px;
     font-weight: 600; font-size: 15px;
   }
+  .btn { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease, color 0.25s ease; }
   .btn.primary { background: var(--accent); color: #16120a; }
-  .btn.primary:hover { background: var(--text); color: #16120a; }
+  .btn.primary:hover { background: var(--text); color: #16120a; transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35); }
   .btn.ghost { border: 1px solid var(--hairline); color: var(--text); }
-  .btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
-  .headshot {
-    width: 240px; height: 300px; object-fit: cover;
-    border-radius: 6px; filter: saturate(0.9) contrast(1.05);
-    border: 1px solid var(--hairline);
-    justify-self: end;
+  .btn.ghost:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-3px); }
+  .headshot-wrap {
+    width: 240px; height: 240px; justify-self: end;
+    animation: floatY 5s ease-in-out infinite;
   }
+  .headshot {
+    width: 240px; height: 240px; object-fit: cover; display: block;
+    border-radius: 50%; filter: saturate(0.9) contrast(1.05);
+    border: 2px solid var(--hairline);
+    transition: transform 0.4s ease, border-color 0.4s ease;
+  }
+  .headshot:hover { transform: scale(1.04); border-color: var(--accent); }
+  .hero-text { animation: fadeUp 0.7s ease both; }
 
   /* SECTIONS */
   section { padding: 64px 0; }
@@ -166,10 +175,24 @@
   .foot-base a { color: var(--muted); }
   .foot-base a:hover { color: var(--accent); }
 
+  /* scroll reveal (same easing as the dev portfolio) */
+  .reveal {
+    opacity: 0; transform: translateY(28px);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .headshot-wrap, .hero-text { animation: none; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+
   @media (max-width: 760px) {
     header { padding: 48px 0 44px; }
     .hero-grid { grid-template-columns: 1fr; gap: 32px; }
-    .headshot { justify-self: start; width: 200px; height: 250px; order: -1; }
+    .headshot-wrap { justify-self: center; order: -1; width: 200px; height: 200px; }
+    .headshot { width: 200px; height: 200px; }
     section { padding: 48px 0; }
     .work-grid { grid-template-columns: 1fr; }
     .about-grid { grid-template-columns: 1fr; gap: 32px; }
@@ -193,7 +216,7 @@
 
 <header id="top">
   <div class="wrap hero-grid">
-    <div>
+    <div class="hero-text">
       <p class="eyebrow">Video Editor &mdash; Coimbatore, India</p>
       <h1>Cuts that<br>carry the <span class="accent">story</span>.</h1>
       <p class="hero-copy">
@@ -206,13 +229,15 @@
         <a class="btn ghost" href="#contact">Get in touch</a>
       </div>
     </div>
-    <img class="headshot" src="./src/profile-photo.jpg?v=2" alt="Anbuselvan S">
+    <div class="headshot-wrap">
+      <img class="headshot" src="./src/profile-photo.jpg?v=2" alt="Anbuselvan S">
+    </div>
   </div>
 </header>
 
 <div class="strip"></div>
 
-<section id="work">
+<section id="work" class="reveal">
   <div class="wrap">
     <div class="sec-head">
       <h2>Selected work</h2>
@@ -224,7 +249,7 @@
 
 <div class="strip"></div>
 
-<section id="about">
+<section id="about" class="reveal">
   <div class="wrap about-grid">
     <div>
       <div class="sec-head"><h2>About</h2></div>
@@ -251,7 +276,7 @@
   </div>
 </section>
 
-<footer id="contact">
+<footer id="contact" class="reveal">
   <div class="wrap">
     <h2>Have footage?<br>Let's make it move.</h2>
     <div class="contact-row">
@@ -272,8 +297,8 @@
   // Each entry: Google Drive file id + display title (+ optional tag line)
   const videos = [
     { id: '1qWTU5K_0ydJZxgWoGban9VT--Qb5BFfj', title: 'Tech-Fest Promo', tag: 'Event promo' },
-    { id: '1bA6yeIWEbzUuZ42gQpfxX8CZa7OVqsHw', title: 'Annual Day', tag: 'College event film' },
-    { id: '1DFD2ZM51P44rVsRNF7xCaIGaR0vP9641', title: 'Phone Theft', tag: 'Short film' },
+    { id: '1bA6yeIWEbzUuZ42gQpfxX8CZa7OVqsHw', title: 'Annual Day', tag: 'College event' },
+    { id: '1DFD2ZM51P44rVsRNF7xCaIGaR0vP9641', title: 'Phone Theft', tag: 'Awareness video' },
     { id: '1jUE53oe4tgCl5Ja8uULRjpVQdvyC246P', title: 'Webinar', tag: 'Session edit' },
   ];
 
@@ -293,6 +318,34 @@
         '<div class="card-meta"><h3>' + v.title + '</h3>' + (v.tag ? '<p>' + v.tag + '</p>' : '') + '</div>';
       grid.appendChild(card);
     }
+  }
+
+  // scroll reveal, same behaviour as the dev portfolio
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const revealEls = [...document.querySelectorAll('.reveal')];
+  if (reduceMotion || !('IntersectionObserver' in window)) {
+    revealEls.forEach((el) => el.classList.add('visible'));
+  } else {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.18, rootMargin: '0px 0px -40px 0px' });
+    revealEls.forEach((el) => observer.observe(el));
+
+    // backup path if the observer never delivers (some in-app browsers)
+    const manualReveal = () => {
+      revealEls.forEach((el) => {
+        if (el.classList.contains('visible')) return;
+        const r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight - 40 && r.bottom > 0) el.classList.add('visible');
+      });
+    };
+    window.addEventListener('scroll', manualReveal, { passive: true });
+    window.addEventListener('load', manualReveal);
   }
 </script>
 </body>
