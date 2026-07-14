@@ -139,6 +139,35 @@
   .frame iframe {
     position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
   }
+  .thumb-wrap {
+    position: absolute; inset: 0; cursor: pointer; border: 0; padding: 0;
+    background: #000; display: block; width: 100%;
+  }
+  .thumb-wrap img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    opacity: 0.85; transition: opacity 0.25s ease;
+  }
+  .thumb-wrap:hover img { opacity: 1; }
+  .play-badge {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(14, 14, 18, 0.75); border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.25s ease, background 0.25s ease;
+  }
+  .thumb-wrap:hover .play-badge { transform: translate(-50%, -50%) scale(1.08); background: rgba(240, 166, 60, 0.9); }
+  .play-badge::before {
+    content: ""; margin-left: 5px;
+    border-left: 20px solid var(--text); border-top: 12px solid transparent; border-bottom: 12px solid transparent;
+  }
+  .close-btn {
+    position: absolute; top: 8px; right: 8px; z-index: 2;
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--hairline);
+    background: rgba(14, 14, 18, 0.85); color: var(--text);
+    font-size: 16px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .close-btn:hover { border-color: var(--accent); color: var(--accent); }
   .card-meta { padding: 14px 18px 16px; }
   .card-meta h3 { font-size: 20px; font-weight: 700; letter-spacing: 0.04em; }
   .card-meta p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
@@ -310,13 +339,50 @@
     grid.innerHTML = '<div class="empty-note" style="grid-column:1/-1">The showreel is being uploaded &mdash; check back shortly.</div>';
   } else {
     count.textContent = String(videos.length).padStart(2, '0') + ' videos';
+
+    // Only one player is loaded at a time: tapping a thumbnail opens that
+    // video and closes whichever one was open, so audio never overlaps.
+    let activeFrame = null;
+
+    function closeActive() {
+      if (!activeFrame) return;
+      const iframe = activeFrame.querySelector('iframe');
+      const closeBtn = activeFrame.querySelector('.close-btn');
+      if (iframe) iframe.remove();
+      if (closeBtn) closeBtn.remove();
+      activeFrame.querySelector('.thumb-wrap').style.display = '';
+      activeFrame = null;
+    }
+
+    function openPlayer(frame, v) {
+      closeActive();
+      frame.querySelector('.thumb-wrap').style.display = 'none';
+      const iframe = document.createElement('iframe');
+      iframe.allow = 'autoplay; fullscreen';
+      iframe.allowFullscreen = true;
+      iframe.src = 'https://drive.google.com/file/d/' + v.id + '/preview';
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'close-btn';
+      closeBtn.setAttribute('aria-label', 'Close video');
+      closeBtn.textContent = '✕';
+      closeBtn.addEventListener('click', closeActive);
+      frame.appendChild(iframe);
+      frame.appendChild(closeBtn);
+      activeFrame = frame;
+    }
+
     for (const v of videos) {
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML =
-        '<div class="frame"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen ' +
-        'src="https://drive.google.com/file/d/' + v.id + '/preview"></iframe></div>' +
+        '<div class="frame">' +
+        '<button class="thumb-wrap" type="button" aria-label="Play ' + v.title + '">' +
+        '<img loading="lazy" src="https://drive.google.com/thumbnail?id=' + v.id + '&sz=w800" alt="' + v.title + '">' +
+        '<span class="play-badge"></span>' +
+        '</button></div>' +
         '<div class="card-meta"><h3>' + v.title + '</h3>' + (v.tag ? '<p>' + v.tag + '</p>' : '') + '</div>';
+      const frame = card.querySelector('.frame');
+      card.querySelector('.thumb-wrap').addEventListener('click', () => openPlayer(frame, v));
       grid.appendChild(card);
     }
   }
