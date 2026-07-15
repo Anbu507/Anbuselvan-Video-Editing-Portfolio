@@ -127,7 +127,7 @@
 
   /* WORK GRID */
   .work-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 26px;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px;
   }
   .card {
     background: var(--panel); border: 1px solid var(--hairline);
@@ -135,7 +135,7 @@
     transition: transform 0.25s ease, border-color 0.25s ease;
   }
   .card:hover { transform: translateY(-4px); border-color: rgba(240, 166, 60, 0.5); }
-  .frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
+  .frame { position: relative; aspect-ratio: 9 / 16; background: #000; }
   .thumb-wrap {
     position: absolute; inset: 0; cursor: pointer; border: 0; padding: 0;
     background: #000; display: block; width: 100%;
@@ -165,8 +165,8 @@
     padding: 56px 10px 16px;
   }
   .lb-player {
-    width: min(100%, calc((100vh - 72px) * 16 / 9));
-    aspect-ratio: 16 / 9;
+    width: min(100%, calc((100vh - 72px) * 9 / 16));
+    aspect-ratio: 9 / 16;
     max-height: 100%;
     background: #000;
   }
@@ -234,7 +234,12 @@
     .headshot-wrap { justify-self: center; order: -1; width: 200px; height: 200px; }
     .headshot { width: 200px; height: 200px; }
     section { padding: 48px 0; }
-    .work-grid { grid-template-columns: 1fr; }
+    .work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .card-meta { padding: 10px 12px 12px; }
+    .card-meta h3 { font-size: 16px; }
+    .card-meta p { font-size: 12px; }
+    .play-badge { width: 48px; height: 48px; }
+    .play-badge::before { border-left-width: 15px; border-top-width: 9px; border-bottom-width: 9px; margin-left: 4px; }
     .about-grid { grid-template-columns: 1fr; gap: 32px; }
     .nav-inner { justify-content: center; }
   }
