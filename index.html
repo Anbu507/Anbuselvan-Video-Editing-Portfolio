@@ -136,9 +136,6 @@
   }
   .card:hover { transform: translateY(-4px); border-color: rgba(240, 166, 60, 0.5); }
   .frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
-  .frame iframe {
-    position: absolute; inset: 0; width: 100%; height: 100%; border: 0;
-  }
   .thumb-wrap {
     position: absolute; inset: 0; cursor: pointer; border: 0; padding: 0;
     background: #000; display: block; width: 100%;
@@ -160,14 +157,28 @@
     content: ""; margin-left: 5px;
     border-left: 20px solid var(--text); border-top: 12px solid transparent; border-bottom: 12px solid transparent;
   }
-  .close-btn {
-    position: absolute; top: 8px; right: 8px; z-index: 2;
-    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--hairline);
-    background: rgba(14, 14, 18, 0.85); color: var(--text);
-    font-size: 16px; line-height: 1; cursor: pointer;
+  /* fullscreen video overlay */
+  .lightbox {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(5, 5, 8, 0.97);
+    display: flex; align-items: center; justify-content: center;
+    padding: 56px 10px 16px;
+  }
+  .lb-player {
+    width: min(100%, calc((100vh - 72px) * 16 / 9));
+    aspect-ratio: 16 / 9;
+    max-height: 100%;
+    background: #000;
+  }
+  .lb-player iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .lb-close {
+    position: fixed; top: 10px; right: 12px; z-index: 101;
+    width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--hairline);
+    background: rgba(14, 14, 18, 0.9); color: var(--text);
+    font-size: 17px; line-height: 1; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
   }
-  .close-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .lb-close:hover { border-color: var(--accent); color: var(--accent); }
   .card-meta { padding: 14px 18px 16px; }
   .card-meta h3 { font-size: 20px; font-weight: 700; letter-spacing: 0.04em; }
   .card-meta p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
@@ -340,35 +351,32 @@
   } else {
     count.textContent = String(videos.length).padStart(2, '0') + ' videos';
 
-    // Only one player is loaded at a time: tapping a thumbnail opens that
-    // video and closes whichever one was open, so audio never overlaps.
-    let activeFrame = null;
+    // Tapping a thumbnail opens the video in a fullscreen overlay.
+    // Only one overlay can exist, so only one video ever plays at a time.
+    function openLightbox(v) {
+      const overlay = document.createElement('div');
+      overlay.className = 'lightbox';
+      overlay.innerHTML =
+        '<button class="lb-close" type="button" aria-label="Close video">✕</button>' +
+        '<div class="lb-player"><iframe allow="autoplay; fullscreen" allowfullscreen ' +
+        'src="https://drive.google.com/file/d/' + v.id + '/preview"></iframe></div>';
+      document.body.appendChild(overlay);
+      document.body.style.overflow = 'hidden';
 
-    function closeActive() {
-      if (!activeFrame) return;
-      const iframe = activeFrame.querySelector('iframe');
-      const closeBtn = activeFrame.querySelector('.close-btn');
-      if (iframe) iframe.remove();
-      if (closeBtn) closeBtn.remove();
-      activeFrame.querySelector('.thumb-wrap').style.display = '';
-      activeFrame = null;
-    }
+      const close = () => {
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        overlay.remove();
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', onKey);
+      };
+      const onKey = (e) => { if (e.key === 'Escape') close(); };
+      overlay.querySelector('.lb-close').addEventListener('click', close);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+      document.addEventListener('keydown', onKey);
 
-    function openPlayer(frame, v) {
-      closeActive();
-      frame.querySelector('.thumb-wrap').style.display = 'none';
-      const iframe = document.createElement('iframe');
-      iframe.allow = 'autoplay; fullscreen';
-      iframe.allowFullscreen = true;
-      iframe.src = 'https://drive.google.com/file/d/' + v.id + '/preview';
-      const closeBtn = document.createElement('button');
-      closeBtn.className = 'close-btn';
-      closeBtn.setAttribute('aria-label', 'Close video');
-      closeBtn.textContent = '✕';
-      closeBtn.addEventListener('click', closeActive);
-      frame.appendChild(iframe);
-      frame.appendChild(closeBtn);
-      activeFrame = frame;
+      // go truly fullscreen where the browser allows it (the overlay
+      // already covers the whole screen as a fallback, e.g. on iPhone)
+      if (overlay.requestFullscreen) overlay.requestFullscreen().catch(() => {});
     }
 
     for (const v of videos) {
@@ -381,8 +389,7 @@
         '<span class="play-badge"></span>' +
         '</button></div>' +
         '<div class="card-meta"><h3>' + v.title + '</h3>' + (v.tag ? '<p>' + v.tag + '</p>' : '') + '</div>';
-      const frame = card.querySelector('.frame');
-      card.querySelector('.thumb-wrap').addEventListener('click', () => openPlayer(frame, v));
+      card.querySelector('.thumb-wrap').addEventListener('click', () => openLightbox(v));
       grid.appendChild(card);
     }
   }
